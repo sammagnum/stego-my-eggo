@@ -6,14 +6,43 @@
 #include <windows.h>
 #include <stdio.h>
 #include "wave.h"
+#include <vector>
+#include <iostream>
+//#include "bitWiseChar.h"
+#include <stdlib.h>
+#include <time.h>
+#include <fstream>
+using namespace std;
+
+
+
+
 
 
 WAVEFORMATEX *pHeader;
-int parseData(BYTE *);
+int parseMessage(BYTE *);
 
-int parseData(BYTE * soundData){
-   
-}   
+/*  parseMessage()
+ *  argument: null terminated char *
+ *  returns: vector of Bitwise Characters
+ */
+
+/* vector<BitWiseChar> parseMessage(char * m){
+    vector<BitWiseChar> v;
+    BitWiseChar t;
+    while(*m != '\0'){
+        t.setChar(*m);
+        v.insert(v.end(),t );
+        m++;
+    }
+    return v;
+
+
+}   */
+int twoBytes2Long(BYTE low , BYTE high){
+    return (long long)(short)(high << 8) + low;
+}
+
 
 int readChunkHeader(FILE *fptr, W_CHUNK *pChunk)
 {
@@ -49,7 +78,7 @@ BYTE *readChunkData(FILE *fptr, int size)
 		return(NULL);
 	}
 
-	return(ptr);	
+	return(ptr);
 } // readChunkData
 
 // prints out wave format info
@@ -64,6 +93,25 @@ void printFormat(W_FORMAT fmt)
 	printf("Bits per Sample: 		%d\n", fmt.bitsPerSample);
 	return;
 } // printFormat
+
+int averageBlocks(BYTE * start,long long place,int noOfBlks)
+{
+              int num = 0;
+              int i;
+              for(i = 0; i < noOfBlks ; i ++)
+              {
+
+              num += (long long)twoBytes2Long(start[place + 4 * i] , (start[place +1  + 4 * i] ));
+
+              }
+
+              num = num/noOfBlks;
+
+
+			  return (num & 255);
+
+}
+
 
 int main(int argc, char *argv[])
 {
@@ -131,11 +179,11 @@ int main(int argc, char *argv[])
         }
 		// read in chunk data
 		pChunkData[cnt] = readChunkData(fptr, chunk[cnt].chunkSize);
-		if(pChunkData[cnt] == NULL) 
+		if(pChunkData[cnt] == NULL)
         {
               system("pause");
               exit(-1);
-        }      
+        }
 
 		if(memcmp( &(chunk[cnt].chunkID), "data", 4) == 0)
 			dataFlag = cnt;	// if find data chunk, take note
@@ -174,14 +222,14 @@ int main(int argc, char *argv[])
 	}
 
 	printFormat(format);
-	
+
 	if(dataFlag == -1)	// have not found data chunk yet
 	{
 		while(cnt < MAX_CHUNKS)
 		{
 			x = readChunkHeader(fptr, &chunk[cnt]);
-			
-			if(x == FAILURE) 
+
+			if(x == FAILURE)
             {
                  system("pause");
                  exit(-1);
@@ -191,7 +239,7 @@ int main(int argc, char *argv[])
 			if(pChunkData[cnt] == NULL)
             {
                 system("pause");
-                exit(-1);                                
+                exit(-1);
             }
 
 			if(memcmp( &(chunk[cnt].chunkID), "data", 4) == 0)
@@ -203,44 +251,125 @@ int main(int argc, char *argv[])
 			cnt++;
 		}
 	}
-	
-	
+
+
 
 	// pChunkData[dataFlag] is a pointer to the begining of the WAVE data
 	// if 8 bit, then it is unsigned	0 to 255
 	// if 16 bit, then it is signed		-32768 to +32767
 	// ask me any other questions
 	// the web page should answer others
-	
+
 	dataChunkSize = (chunk[dataFlag].chunkSize);
 	noSampleFrames = dataChunkSize/format.blockAlign;
-	
-	printf("Size of data chunk: %ld\nSample Frames: %d\n",dataChunkSize,noSampleFrames);
-	
-	
-	cnt = 0;
-	BYTE * start = pChunkData[dataFlag];
-	BYTE left,right;
-	while(cnt < noSampleFrames)
-	{
-          printf("Left LSB: %X Right LSB: %X count: %d stop: %d \n", start[cnt * format.blockAlign], start[2 + (cnt * format.blockAlign)],cnt,noSampleFrames);
-          //left =  start[cnt * format.blockAlign];
-          //right = start[2 + (cnt * format.blockAlign)];
-          cnt++;          
-    }
 
-	
-	
-	
-	
+	printf("Size of data chunk: %ld\nSample Frames: %d\n",dataChunkSize,noSampleFrames);
+
+
+	cnt = 0;
+
+    int sampleSize = 16;
+	int noOfBlks = 4, i;
+	BYTE * start = pChunkData[dataFlag];
+	srand ( time(NULL) );
+	long long left,right; /* used long long as I anticipate large averages being required to minimize effect on cover */
+	int leftm, rightm,diff;
+	ifstream::pos_type size;
+	char * b_message;
+
+    /* http://www.cplusplus.com/doc/tutorial/files/ */
+    ifstream file ("message.bin", ios::in|ios::binary|ios::ate);
+
+
+
+    if (file.is_open())
+    {
+        size = file.tellg();
+        b_message = new char [size];
+        file.seekg (0, ios::beg);
+        file.read (b_message, size);
+        file.close();
+
+
+        cout << "the message file content is in memory" << endl;
+
+
+    }
+    else cout << "Unable to open file";
+    /* code quote ends here */
+
+
+   //
+   // stego method goes here: BYTE start * is cover data
+   //                         char b_message * is message or hidden data
+   //
+
+    cout << "Completed processing...\n";
+
+
+    ofstream outfile ("eggo.wav", ios::out | ios::trunc | ios::binary);
+	cout<< "data size: " << chunk[dataFlag].chunkSize << endl;
+	cout << "format flag: " << formatFlag << "data flag: " << dataFlag << endl ;
+
+
+
+	if(outfile.is_open()){
+		outfile.write((char *)&(chunk[0]),8);
+	    outfile.write((char *)pChunkData[0],4);
+	    outfile.write("fmt ",4);
+		outfile.write((char *)&sampleSize,4);
+        outfile.write((char *)&format,16);
+        outfile.write((char *)&chunk[dataFlag],8);
+	    outfile.write((char *)start,chunk[dataFlag].chunkSize); //new data
+    }
+	cout << outfile.tellp() << " is the current position of the file pointer.\n";
+    outfile.close();
+   /* rewind(fptr);
+    cnt = 0;
+    if(outfile.is_open()){
+        while(cnt < MAX_CHUNKS)
+		{
+            x = readChunkHeader(fptr, &chunk[cnt]);
+
+
+			if(x == FAILURE)
+            {
+                 system("pause");
+                 exit(-1);
+            }
+            outfile.write(
+           	if(memcmp( &(chunk[cnt].chunkID), "data", 4) == 0)
+			{
+				dataFlag = cnt;	// found data chunk
+				break;
+			}
+			// read in chunk data
+			pChunkData[cnt] = readChunkData(fptr, chunk[cnt].chunkSize);
+			if(pChunkData[cnt] == NULL)
+            {
+                system("pause");
+                exit(-1);
+            }
+
+
+
+			cnt++;
+		}
+
+    }*/
+
+
+
+
 
 	printf("\n");
-	
+
 	fclose(fptr);
-	
+
 	printf("Exiting...\n");
 	system("pause");
 
 	exit(0);
 } // main
+
 

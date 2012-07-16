@@ -1,0 +1,21 @@
+# depslib dependency file v1.0
+1342462399 source:z:\summer2012\stego\stego-my-eggo\src\wavemessageembedder.cpp
+	"..\include\WaveMessageEmbedder.h"
+
+1342461070 z:\summer2012\stego\stego-my-eggo\include\wavemessageembedder.h
+	<iostream>
+	<bitset>
+	"windows.h"
+
+1342461657 source:z:\summer2012\stego\stego-my-eggo\main.cpp
+	<windows.h>
+	<stdio.h>
+	"wave.h"
+	<vector>
+	<iostream>
+	<stdlib.h>
+	<time.h>
+	<fstream>
+
+1342448881 z:\summer2012\stego\stego-my-eggo\wave.h
+
