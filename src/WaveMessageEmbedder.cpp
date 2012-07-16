@@ -1,18 +1,32 @@
 #include "..\include\WaveMessageEmbedder.h"
 
-WaveMessageEmbedder::WaveMessageEmbedder(char * message, unsigned int messageSize, BYTE * cover, DWORD coverSize)
+WaveMessageEmbedder::WaveMessageEmbedder(char * m, unsigned int mSize, BYTE * c, DWORD cSize)
 {
-    this->message = (std::bitset<8> *) malloc(messageSize);
-
-
+    int cnt = 0;
+    mByteCount = mSize;
+    cByteCount =
+    message = new std::bitset<8>  [mSize];
+    cover = new std::bitset<8>  [cSize];
+    for( cnt = 0 ; cnt < mSize; cnt++)
+        setMessageByte(m[cnt],cnt);
 }
 
 WaveMessageEmbedder::~WaveMessageEmbedder()
 {
-    //dtor
+    delete [] message;
+    delete [] cover;
 }
 
-int main(){
+WaveMessageEmbedder::print()
+{
+    cout << "Message Bytes" << endl;
+    for( cnt = 0 ; cnt < mByteCount; cnt++)
+        std::cout<< message[cnt] << ", "
+
+}
+
+int main()
+{
     char message [] = "abcd";
     BYTE cover []  = {1,255,1,255};
     WaveMessageEmbedder * w  = new WaveMessageEmbedder(message,4,cover,4);
