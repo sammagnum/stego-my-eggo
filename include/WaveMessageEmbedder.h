@@ -1,6 +1,6 @@
 #ifndef WAVEMESSAGEEMBEDDER_H
 #define WAVEMESSAGEEMBEDDER_H
-
+#include <stdio.h>
 #include <iostream>
 #include <bitset>
 #include <fstream>
@@ -9,6 +9,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include <time.h>
+
 
 #include "windows.h"
 
@@ -27,16 +28,18 @@ private:
     void embed(int b,int n);
     void setMessageByte(BYTE val);
     void setCoverByte(BYTE val,int cnt);
-    int getlsb(int b,int value);
-    int averageandgetlsbs(int d,int e,int f,int g);
-    int getNbitsFromMessage(int n);
     int averageNLeftSamples(int n);
+    int getlsb(int b,int value);
+    int getNbitsFromMessage(int n);
+   // int averageNLeftSamples(int n);
     int averageNRightSamples(int n);
     void extract(int b,int n);
 
 
 
+
 public:
+
 
     //insert overloaded constructor with cover only for extraction
     WaveMessageEmbedder(char * message,unsigned int messageSize, BYTE * cover, DWORD coverSize);
